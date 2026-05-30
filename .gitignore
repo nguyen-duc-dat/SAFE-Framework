@@ -1,0 +1,18 @@
+# Bỏ qua các file môi trường (BẢO MẬT API KEY)
+.env
+.env.*
+
+# Bỏ qua các thư mục cache của Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# Bỏ qua thư mục chứa kết quả Output của dự án
+autef_outputs_global/
+autef_outputs/
+
+# Bỏ qua môi trường ảo (Nếu cậu có dùng)
+venv/
+env/
+.venv/
