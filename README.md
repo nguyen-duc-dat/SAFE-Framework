@@ -223,6 +223,13 @@ python autogen_pipeline.py -p <Đường_Dẫn_Dự_Án> [Tùy chọn]
 
 ### Các lệnh thực tế
 
+**Tra cứu menu hướng dẫn (Help)**
+**Để xem toàn bộ danh sách các lệnh và tùy chọn được hệ thống hỗ trợ trực tiếp trên Terminal:**
+
+```bash
+python autogen_pipeline.py --help
+```
+
 **Kiểm thử một hoặc nhiều file cụ thể** *(khuyên dùng)*
 
 ```bash
