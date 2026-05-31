@@ -260,8 +260,8 @@ Sau mỗi lần chạy, hệ thống tự động tạo thư mục `autef_output
 autef_outputs_global/
 └── run_20250531_143022/
     ├── test_plans/         # Kế hoạch kiểm thử do Analyst Agent lập
-    ├── test_scripts/       # File test hoàn chỉnh đã vượt qua Quality Gates
-    ├── execution_logs/     # Lịch sử giao tiếp giữa các Agent
+    ├── test_scripts/       # File test hoàn chỉnh
+    ├── execution_logs/     # Log báo cáo các test case PASS hay FAIL
     └── reports/
         ├── coverage/       # Báo cáo độ phủ (SonarQube)
         └── mutation/       # Báo cáo đột biến (Stryker)
