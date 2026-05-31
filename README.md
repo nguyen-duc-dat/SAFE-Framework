@@ -2,7 +2,7 @@
 
 > Hệ thống tự động sinh, kiểm chứng và tối ưu hóa Unit Test cho dự án JavaScript/ReactJS bằng kiến trúc đa tác nhân LLM.
 
-AUTOM phân tích mã nguồn, lập kế hoạch kiểm thử, sinh test case, tự động sửa lỗi (**Self-healing**), nâng cao độ phủ code theo chuẩn **SonarQube** và tiêu diệt các đột biến còn sống (**Mutation Testing**) — hoàn toàn tự động, không cần can thiệp thủ công.
+AUTOM phân tích mã nguồn, lập kế hoạch kiểm thử, sinh test case, tự động sửa lỗi (**Self-healing**), nâng cao độ phủ code và tiêu diệt các đột biến còn sống (**Mutation Testing**) 
 
 ---
 
@@ -31,8 +31,8 @@ AUTOM/
 │   └── prompt_mutation.txt     # Mutation Agent — tiêu diệt mutant còn sống (Stryker)
 │
 ├── skills/                     # Lớp hành động — Công cụ thực thi cho Agent
-│   ├── context_analyzer.py     # Đọc hiểu Tech Stack từ autef.config.json
-│   ├── test_generation.py      # Lắp ráp và ghi file test từ LLM output
+│   ├── context_analyzer.py     
+│   ├── test_generation.py      
 │   ├── test_execution.py       # Chạy lệnh Jest, thu thập stdout/stderr
 │   ├── auto_fixing.py          # Điều phối vòng lặp tự sửa lỗi
 │   ├── coverage_agent.py       # Tính toán điểm Branch/Line Coverage
@@ -43,7 +43,7 @@ AUTOM/
 ├── workflows/                  # Lớp điều phối — Trung tâm điều khiển pipeline
 │   └── autogen_pipeline.py     # Pipeline 13 bước — kết nối AutoGen & 5 LLM Agent
 │
-├── .env                        # API Keys (không được đẩy lên Git)
+├── .env                        # API Keys
 ├── .gitignore
 ├── requirements.txt
 └── README.md
@@ -122,13 +122,14 @@ npm install -D jest babel-jest jest-environment-jsdom identity-obj-proxy \
   @stryker-mutator/core @stryker-mutator/jest-runner
 ```
 
-### Bước 2.2 — Tạo các file cấu hình
+### Bước 2.2 — Yêu cầu về môi trường kiểm thử
 
-> ⚠️ Bước này cực kỳ quan trọng với các dự án dùng ES Modules (ESM).
+Hệ thống AUTOM yêu cầu dự án đích **phải có sẵn môi trường chạy Jest hoạt động bình thường**. AUTOM sẽ gọi các lệnh Jest cục bộ để xác thực test case do AI sinh ra.
 
-Tạo 3 file sau tại **thư mục gốc của dự án Frontend**:
+>  **Mẫu cấu hình tham khảo** dành cho dự án React/Vite sử dụng ESM: Nếu dự án gặp lỗi liên quan đến ES Modules hoặc JSDOM, tham khảo 3 file cấu hình ổn định dưới đây và đặt tại **thư mục gốc của dự án Frontend**.
 
-#### `babel.config.cjs`
+<details>
+<summary><b>1. babel.config.cjs</b> (Bấm để xem)</summary>
 
 ```js
 module.exports = {
@@ -139,7 +140,10 @@ module.exports = {
 };
 ```
 
-#### `jest.setup.js`
+</details>
+
+<details>
+<summary><b>2. jest.setup.js</b> (Bấm để xem)</summary>
 
 ```js
 import { TextEncoder, TextDecoder } from 'util';
@@ -160,7 +164,10 @@ if (typeof global.import === 'undefined') {
 }
 ```
 
-#### `jest.config.cjs`
+</details>
+
+<details>
+<summary><b>3. jest.config.cjs</b> (Bấm để xem)</summary>
 
 ```js
 module.exports = {
@@ -181,7 +188,9 @@ module.exports = {
 };
 ```
 
-> 📝 File `stryker.conf.json` **không cần tạo thủ công** — AUTOM tự động sinh và quản lý file này.
+</details>
+
+> **Lưu ý:** File `stryker.conf.json` **không cần tạo thủ công** — AUTOM tự động sinh và quản lý file này trong quá trình quét đột biến (Mutation).
 
 ### Bước 2.3 — Tạo file cấu hình AUTOM
 
