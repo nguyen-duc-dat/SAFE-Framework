@@ -1,46 +1,119 @@
-# AUTEF — Automated Unit Testing & Enhancement Framework
+# AUTOM — Automated Unit Test Orchestration with Multi-agent
 
-AUTEF là một hệ thống kiểm thử tự động hóa đa dự án (**Multi-Project Framework**) được thiết kế theo kiến trúc **Micro-agent** bằng LLM. Hệ thống tự động phân tích mã nguồn, sinh Test Case, tự động gỡ lỗi (**Self-healing**), nâng điểm phủ code (**Coverage**) theo chuẩn SonarQube và tiêu diệt các kịch bản đột biến (**Mutation Testing**) hoàn toàn tự động.
+> Hệ thống tự động sinh, kiểm chứng và tối ưu hóa Unit Test cho dự án JavaScript/ReactJS bằng kiến trúc đa tác nhân LLM.
+
+AUTOM phân tích mã nguồn, lập kế hoạch kiểm thử, sinh test case, tự động sửa lỗi (**Self-healing**), nâng cao độ phủ code theo chuẩn **SonarQube** và tiêu diệt các đột biến còn sống (**Mutation Testing**) — hoàn toàn tự động, không cần can thiệp thủ công.
 
 ---
 
 ## Mục lục
 
-- [Phần 1 — Cài đặt hệ thống lõi (AUTEF Engine)](#phần-1--cài-đặt-hệ-thống-lõi-autef-engine)
-- [Phần 2 — Thiết lập dự án đích (Target Project)](#phần-2--thiết-lập-dự-án-đích-target-project)
+- [Kiến trúc hệ thống](#kiến-trúc-hệ-thống)
+- [Phần 1 — Cài đặt AUTOM Engine](#phần-1--cài-đặt-autom-engine)
+- [Phần 2 — Thiết lập dự án đích](#phần-2--thiết-lập-dự-án-đích)
 - [Phần 3 — Hướng dẫn sử dụng CLI](#phần-3--hướng-dẫn-sử-dụng-cli)
+- [Kết quả đầu ra](#kết-quả-đầu-ra)
 
 ---
 
-## Phần 1 — Cài đặt hệ thống lõi (AUTEF Engine)
+## Kiến trúc hệ thống
 
-### Bước 1.1: Cài đặt Python Dependencies
+AUTOM được tổ chức theo ba lớp phân tách rõ ràng:
 
-Mở Terminal tại thư mục chứa AUTEF và chạy:
+```
+AUTOM/
+│
+├── rules/                      # Lớp tri thức — System Prompt cho từng Agent
+│   ├── prompt_analyzer.txt     # Analyst Agent — phân tích mã nguồn, lập test plan
+│   ├── prompt_coder.txt        # Coder Agent — sinh mã unit test chuẩn Jest
+│   ├── prompt_fixer.txt        # Fixer Agent — tự động sửa lỗi (Self-healing)
+│   ├── prompt_coverage.txt     # Coverage Agent — tối ưu độ phủ theo SonarQube
+│   └── prompt_mutation.txt     # Mutation Agent — tiêu diệt mutant còn sống (Stryker)
+│
+├── skills/                     # Lớp hành động — Công cụ thực thi cho Agent
+│   ├── context_analyzer.py     # Đọc hiểu Tech Stack từ autef.config.json
+│   ├── test_generation.py      # Lắp ráp và ghi file test từ LLM output
+│   ├── test_execution.py       # Chạy lệnh Jest, thu thập stdout/stderr
+│   ├── auto_fixing.py          # Điều phối vòng lặp tự sửa lỗi
+│   ├── coverage_agent.py       # Tính toán điểm Branch/Line Coverage
+│   ├── mutation_execution.py   # Kích hoạt và quản lý tiến trình Stryker
+│   ├── mutation_refiner.py     # Trích xuất danh sách mutant sống sót từ JSON
+│   └── file_utils.py           # Xử lý I/O, đọc/ghi/sao lưu file an toàn
+│
+├── workflows/                  # Lớp điều phối — Trung tâm điều khiển pipeline
+│   └── autogen_pipeline.py     # Pipeline 13 bước — kết nối AutoGen & 5 LLM Agent
+│
+├── .env                        # API Keys (không được đẩy lên Git)
+├── .gitignore
+├── requirements.txt
+└── README.md
+```
+
+### Luồng hoạt động
+
+```
+Source code (.js/.jsx)
+        │
+        ▼
+  Analyst Agent ──────► test_plan.md
+        │
+        ▼
+   Coder Agent ──────► *.test.js
+        │
+        ▼
+   npx jest --coverage
+        │
+   ┌────┴─────┐
+   │ Có lỗi?  │
+   └────┬─────┘
+     YES│                    NO
+        ▼                    │
+  Fixer Agent ◄──────────────┘
+  (tự sửa lỗi)
+        │
+        ▼ (toàn bộ pass)
+  Coverage Agent ──► bổ sung test case
+        │
+        ▼ (đạt ngưỡng 80%)
+  Mutation Agent ──► tiêu diệt mutant
+        │
+        ▼
+  Test suite hoàn chỉnh ✓
+```
+
+---
+
+## Phần 1 — Cài đặt AUTOM Engine
+
+### Bước 1.1 — Cài đặt Python dependencies
+
+Mở Terminal tại thư mục gốc của AUTOM và chạy:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### Bước 1.2: Thiết lập API Keys
+### Bước 1.2 — Thiết lập API Keys
 
-Tạo file `.env` tại **thư mục gốc** của hệ thống AUTEF (ngang hàng với thư mục `skills` và `rules`), sau đó điền các khóa API của Google Gemini:
+Tạo file `.env` tại **thư mục gốc của AUTOM** (ngang hàng với `rules/` và `skills/`):
 
 ```env
 GEMINI_API_KEY_1=your_api_key_here
 GEMINI_API_KEY_2=your_api_key_here
-# Có thể thêm nhiều key để hệ thống tự động xoay vòng (Load balancing)
+# Có thể thêm nhiều key để hệ thống tự động xoay vòng (load balancing)
 ```
+
+> ⚠️ File `.env` đã được thêm vào `.gitignore`. Không bao giờ đẩy file này lên Git.
 
 ---
 
-## Phần 2 — Thiết lập dự án đích (Target Project)
+## Phần 2 — Thiết lập dự án đích
 
-Trước khi đưa một dự án Frontend (ví dụ: ReactJS/Vite) vào AUTEF, dự án đó **bắt buộc** phải được cài đặt môi trường kiểm thử tương ứng.
+Trước khi đưa một dự án ReactJS/Vite vào AUTOM, dự án đó **bắt buộc** phải được cài đặt môi trường kiểm thử tương ứng.
 
-### Bước 2.1: Cài đặt thư viện (NPM)
+### Bước 2.1 — Cài đặt thư viện NPM
 
-Mở Terminal tại thư mục gốc của dự án Frontend và chạy:
+Mở Terminal tại **thư mục gốc của dự án Frontend** và chạy:
 
 ```bash
 npm install -D jest babel-jest jest-environment-jsdom identity-obj-proxy \
@@ -49,11 +122,11 @@ npm install -D jest babel-jest jest-environment-jsdom identity-obj-proxy \
   @stryker-mutator/core @stryker-mutator/jest-runner
 ```
 
-### Bước 2.2: Cấu hình môi trường
+### Bước 2.2 — Tạo các file cấu hình
 
-> ⚠️ **Cực kỳ quan trọng** cho các dự án sử dụng ES Modules (ESM).
+> ⚠️ Bước này cực kỳ quan trọng với các dự án dùng ES Modules (ESM).
 
-Tạo 3 file cấu hình sau tại **thư mục gốc** của dự án Frontend:
+Tạo 3 file sau tại **thư mục gốc của dự án Frontend**:
 
 #### `babel.config.cjs`
 
@@ -108,11 +181,11 @@ module.exports = {
 };
 ```
 
-> 📝 **Lưu ý:** File `stryker.conf.json` **không cần tạo thủ công**. AUTEF sẽ tự động sinh và quản lý file này trong quá trình quét.
+> 📝 File `stryker.conf.json` **không cần tạo thủ công** — AUTOM tự động sinh và quản lý file này.
 
-### Bước 2.3: Tạo file cấu hình AUTEF
+### Bước 2.3 — Tạo file cấu hình AUTOM
 
-Tạo file `autef.config.json` tại **thư mục gốc** của dự án đích. Đây là nơi định nghĩa luật lệ và Tech Stack để hệ thống AI hiểu về dự án của bạn:
+Tạo file `autef.config.json` tại **thư mục gốc của dự án đích**. File này giúp các Agent AI hiểu đúng Tech Stack và quy ước của dự án:
 
 ```json
 {
@@ -133,48 +206,72 @@ Tạo file `autef.config.json` tại **thư mục gốc** của dự án đích.
 
 ## Phần 3 — Hướng dẫn sử dụng CLI
 
-Sau khi hoàn tất cài đặt, mở Terminal từ **thư mục hệ thống AUTEF** và sử dụng CLI theo cú pháp sau:
+Mở Terminal tại **thư mục gốc của AUTOM** và dùng cú pháp sau:
 
 ```bash
-python autogen_pipeline.py -p <Đường_Dẫn_Dự_Án> [Các Tùy Chọn]
+python autogen_pipeline.py -p <Đường_Dẫn_Dự_Án> [Tùy chọn]
 ```
 
 ### Các lệnh thực tế
 
-#### Kiểm thử một hoặc nhiều file cụ thể *(khuyên dùng)*
-
-Dùng cờ `-f` kèm đường dẫn tương đối tới file bên trong dự án đích:
+**Kiểm thử một hoặc nhiều file cụ thể** *(khuyên dùng)*
 
 ```bash
-python autogen_pipeline.py -p "C:/my-react-app" -f "src/pages/AdminPage.jsx" "src/components/Button.jsx"
+python autogen_pipeline.py -p "C:/my-react-app" -f "src/pages/AdminPage.jsx" "src/stores/useCartStore.js"
 ```
 
-#### Kiểm thử toàn bộ một thư mục
-
-Dùng cờ `-d` để đệ quy toàn bộ file `.js`, `.jsx` trong một thư mục cụ thể:
+**Kiểm thử toàn bộ một thư mục**
 
 ```bash
 python autogen_pipeline.py -p "C:/my-react-app" -d "src/stores"
 ```
 
-#### Kiểm thử toàn bộ dự án (Full-scan)
-
-Dùng cờ `--all` để hệ thống tự động quét toàn bộ thư mục `src`:
+**Kiểm thử toàn bộ dự án (Full-scan)**
 
 ```bash
 python autogen_pipeline.py -p "C:/my-react-app" --all
 ```
 
-> ⚠️ **Lưu ý:** Quá trình Full-scan sẽ tốn nhiều thời gian và token.
+> ⚠️ Full-scan sẽ tốn nhiều thời gian và token API. Nên dùng `-f` hoặc `-d` cho từng module.
 
-### Thư mục Artifacts (Đầu ra)
+---
 
-Sau khi hệ thống hoàn tất, toàn bộ kết quả sẽ được tự động lưu tại thư mục **`autef_outputs_global`** nằm ngang hàng với thư mục dự án của bạn, bao gồm:
+## Kết quả đầu ra
 
-| Loại file | Mô tả |
+Sau mỗi lần chạy, hệ thống tự động tạo thư mục `autef_outputs_global/run_YYYYMMDD_HHMMSS/` nằm **ngang hàng với thư mục dự án đích**:
+
+```
+autef_outputs_global/
+└── run_20250531_143022/
+    ├── test_plans/         # Kế hoạch kiểm thử do Analyst Agent lập
+    ├── test_scripts/       # File test hoàn chỉnh đã vượt qua Quality Gates
+    ├── execution_logs/     # Lịch sử giao tiếp giữa các Agent
+    └── reports/
+        ├── coverage/       # Báo cáo độ phủ (SonarQube)
+        └── mutation/       # Báo cáo đột biến (Stryker)
+```
+
+| Thư mục | Nội dung |
 |---|---|
-| Test Plans | Kế hoạch kiểm thử được AI sinh ra |
-| Logs | Nhật ký quá trình chạy |
-| File Test | Các file test `.test.js` / `.test.jsx` |
-| Báo cáo Coverage | Báo cáo độ phủ code chuẩn SonarQube |
-| Báo cáo Mutation | Kết quả kiểm thử đột biến từ Stryker |
+| `test_plans/` | File `.md` chứa kịch bản kiểm thử do Analyst Agent sinh ra |
+| `test_scripts/` | File `.test.js` / `.test.jsx` đã pass toàn bộ Jest |
+| `execution_logs/` | Log thực thi từng bước của pipeline |
+| `reports/coverage/` | Báo cáo HTML + JSON từ Jest/Istanbul |
+| `reports/mutation/` | Báo cáo HTML + JSON từ Stryker Mutator |
+
+---
+
+## Yêu cầu hệ thống
+
+| Thành phần | Phiên bản tối thiểu |
+|---|---|
+| Python | 3.10+ |
+| Node.js | 18+ |
+| npm | 9+ |
+| Google Gemini API Key | Bắt buộc |
+
+---
+
+## Giấy phép
+
+MIT License — Tự do sử dụng, chỉnh sửa và phân phối.
