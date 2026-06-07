@@ -35,5 +35,5 @@ class MutationRefinerAgent:
         if not survived_list:
             return ""
             
-        # CHỈ trả về danh sách Mutant, tuyệt đối không nối thêm Source Code vào đây
+        # CHỈ trả về danh sách Mutant, tuyệt đối không nối thêm Source Code
         return "\n".join(survived_list)

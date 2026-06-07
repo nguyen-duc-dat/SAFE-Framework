@@ -4,20 +4,19 @@ import autogen
 import shutil
 import time
 import argparse
-import json # [ĐÃ THÊM] Thư viện để đọc file autef.config.json
+import json 
 from datetime import datetime
 from dotenv import load_dotenv
 
 # --- [PHẦN 0] SETUP PATHS ---
 current_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.abspath(os.path.join(current_dir, ".."))
-project_root = os.path.abspath(os.path.join(parent_dir, "..")) # Lùi 2 cấp ra ngoài cùng dự án
+project_root = os.path.abspath(os.path.join(parent_dir, ".."))
 
 for path in [parent_dir, os.path.join(parent_dir, "skills")]:
     if path not in sys.path:
         sys.path.append(path)
 
-# ĐÃ XÓA VIỆC TẠO THƯ MỤC Ở ĐÂY ĐỂ DI CHUYỂN XUỐNG PHẦN CLI
 
 from skills.context_analyzer import ContextAnalyzerAgent
 from skills.test_generation import TestGenerationAgent
@@ -58,7 +57,7 @@ llm_config = {
     "max_retries": 7, # tự động retry khi hết token
 }
 
-# ==================== [ĐÃ NÂNG CẤP] TRẠM TRỘN PROMPT ====================
+# ==TRỘN PROMPT ===
 def get_rule(file_name, frontend_dir=None):
     rule_path = os.path.join(parent_dir, "rules", file_name)
     with open(rule_path, 'r', encoding='utf-8') as f:
@@ -80,7 +79,7 @@ def get_rule(file_name, frontend_dir=None):
                         value = "- " + "\n- ".join(value)
                     prompt_content = prompt_content.replace(placeholder, str(value))
         except Exception as e:
-            print(f"⚠️ [CẢNH BÁO] Lỗi đọc file autef.config.json: {e}")
+            print(f"[CẢNH BÁO] Lỗi đọc file autef.config.json: {e}")
 
     return prompt_content
 # =========================================================================
@@ -99,11 +98,11 @@ def fast_chat(agent, message):
     except Exception as e:
         print(f"\n LỖI TRÍ MẠNG KHI GỌI API: {str(e)}")
         print("=> HƯỚNG GIẢI QUYẾT: API Key đã hết Quota hoặc mất mạng. Hãy thay API Key mới vào file .env rồi chạy lại!")
-        sys.exit(1) # Dừng chương trình ngay lập tức
+        sys.exit(1)
 
-# [ĐÃ XÓA PHẦN 2 INIT AGENTS Ở ĐÂY - CHUYỂN XUỐNG CUỐI FILE]
+# [PHẦN 2 INIT AGENTS CHUYỂN XUỐNG CUỐI FILE]
 
-# --- [PHẦN 3] PIPELINE 13 BƯỚC FULL ---
+# --- [PHẦN 3] PIPELINE 13 BƯỚC ---
 def run_full_pipeline(source_file):
     source_file = source_file.replace("\\", "/")
     file_name = os.path.basename(source_file)
@@ -175,16 +174,14 @@ def run_full_pipeline(source_file):
         log_time(" [CẢNH BÁO] Test vẫn FAIL. Dừng pipeline!")
         return
 
-    # =====================================================================
     # --- BƯỚC 8-9: COVERAGE ENHANCEMENT (SONARQUBE) & SELF-HEALING ---
-    # =====================================================================
     log_time(" Kiểm tra mức độ phủ code theo chuẩn SonarQube (Quality Gate >= 80%)...")
     coverage_context = cov_tool.get_coverage_context(source_file, test_path)
     
     if not coverage_context or "COVERAGE_100" in coverage_context:
-        log_time(" ✅ Quality Gate Passed (Coverage >= 80%). Bỏ qua CovExpert.")
+        log_time(" Quality Gate Passed (Coverage >= 80%). Bỏ qua CovExpert.")
     elif len(coverage_context) > 50:
-        log_time(" 📉 Điểm Coverage chưa đạt ngưỡng 80%. Nhờ CovExpert đánh mạnh vào các nhánh (Branch)...")
+        log_time(" Điểm Coverage chưa đạt ngưỡng 80%. Nhờ CovExpert đánh mạnh vào các nhánh (Branch)...")
         
         with open(test_path, 'r', encoding='utf-8') as f:
             backup_test_code = f.read()
@@ -206,7 +203,7 @@ def run_full_pipeline(source_file):
                 
                 max_rescue = 2
                 for r in range(max_rescue):
-                    log_time(f" 🚑 Fixer đang xử lý lỗi Coverage (Lần {r+1}/{max_rescue})...")
+                    log_time(f" Fixer đang xử lý lỗi Coverage (Lần {r+1}/{max_rescue})...")
                     
                     rescue_log_path = os.path.join(OUTPUT_DIR, "execution_logs", f"{file_base}_Cov_Rescue_Lần_{r+1}.log")
                     with open(rescue_log_path, "w", encoding="utf-8") as f:
@@ -220,7 +217,7 @@ def run_full_pipeline(source_file):
                     
                     is_verify_pass, verify_log = exe_tool.execute(rel_test_path)
                     if is_verify_pass:
-                        log_time(" ✅ Fixer đã cứu viện thành công! Bộ test lại XANH mượt.")
+                        log_time(" Fixer đã cứu viện thành công! Bộ test lại XANH mượt.")
                         break 
                 
                 if not is_verify_pass:
@@ -314,7 +311,7 @@ def run_full_pipeline(source_file):
             
             max_rescue = 2
             for r in range(max_rescue):
-                log_time(f" 🚑 Fixer đang cố gắng sửa lỗi (Lần {r+1}/{max_rescue})...")
+                log_time(f"Fixer đang cố gắng sửa lỗi (Lần {r+1}/{max_rescue})...")
                 
                 rescue_log_path = os.path.join(OUTPUT_DIR, "execution_logs", f"{file_base}_Mut_Rescue_{r+1}.log")
                 with open(rescue_log_path, "w", encoding="utf-8") as f:
@@ -328,7 +325,7 @@ def run_full_pipeline(source_file):
                 
                 is_verify_pass, verify_log = exe_tool.execute(rel_test_path)
                 if is_verify_pass:
-                    log_time(" ✅ Fixer đã cấp cứu thành công! Bộ test lại XANH mượt.")
+                    log_time(" Fixer đã cấp cứu thành công! Bộ test lại XANH mượt.")
                     break 
             
             if not is_verify_pass:
@@ -361,9 +358,9 @@ def run_full_pipeline(source_file):
         log_time(" Đã sao lưu Báo cáo Mutation.")
 
     print(f"\n{'='*20} HOÀN TẤT AUTEF PIPELINE {'='*20}")
-    print(f"✅ Toàn bộ kết quả (Logs, Code, Reports) đã được lưu trữ an toàn tại:\n📁 {OUTPUT_DIR}")
+    print(f"Toàn bộ kết quả (Logs, Code, Reports) đã được lưu trữ an toàn tại:\n📁 {OUTPUT_DIR}")
 
-# --- [PHẦN CUỐI] GIAO DIỆN DÒNG LỆNH (CLI) ĐA DỰ ÁN ---
+# --- [PHẦN CUỐI] GIAO DIỆN DÒNG LỆNH (CLI)---
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="AUTEF - Hệ thống Kiểm thử Tự động hóa bằng LLM (Phiên bản Đa Dự Án)",
@@ -381,10 +378,10 @@ if __name__ == "__main__":
     FRONTEND_DIR = os.path.abspath(args.project)
 
     if not os.path.exists(FRONTEND_DIR):
-        print(f"❌ [LỖI TRÍ MẠNG] Không tìm thấy thư mục dự án: {FRONTEND_DIR}")
+        print(f"[LỖI TRÍ MẠNG] Không tìm thấy thư mục dự án: {FRONTEND_DIR}")
         sys.exit(1)
 
-    print(f"🌍 [MÔI TRƯỜNG] Đã nạp dự án mục tiêu: {FRONTEND_DIR}")
+    print(f"[MÔI TRƯỜNG] Đã nạp dự án mục tiêu: {FRONTEND_DIR}")
 
     # SAU KHI BIẾT FRONTEND_DIR, MỚI BẮT ĐẦU TẠO OUTPUT_DIR VÀ FOLDERS BÊN TRONG
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -425,34 +422,34 @@ if __name__ == "__main__":
             if os.path.exists(target):
                 files_to_process.append(target)
             else:
-                print(f"❌ [LỖI] Không tìm thấy file: {target}")
+                print(f"[LỖI] Không tìm thấy file: {target}")
 
     elif args.dir or args.all:
         folder_to_scan = "src" if args.all else args.dir
         target_dir = os.path.join(FRONTEND_DIR, folder_to_scan)
         
         if os.path.exists(target_dir):
-            print(f"🔍 Đang quét thư mục: {folder_to_scan}...")
+            print(f"Đang quét thư mục: {folder_to_scan}...")
             for root, _, files in os.walk(target_dir):
                 for file in files:
                     if (file.endswith('.js') or file.endswith('.jsx')) and not file.endswith('.test.js') and not file.endswith('.test.jsx'):
                         files_to_process.append(os.path.join(root, file))
         else:
-            print(f"❌ [LỖI] Không tìm thấy thư mục: {target_dir}")
+            print(f"[LỖI] Không tìm thấy thư mục: {target_dir}")
     else:
         parser.print_help()
         sys.exit(0)
 
-    # ================= 4. KHỞI ĐỘNG BĂNG CHUYỀN =================
+    # ================= 4. KHỞI ĐỘNG =================
     if not files_to_process:
-        print("⚠️ Không tìm thấy file mã nguồn nào hợp lệ để kiểm thử.")
+        print("Không tìm thấy file mã nguồn nào hợp lệ để kiểm thử.")
     else:
         print(f"\n🚀 [HỆ THỐNG ĐÃ KHỞI ĐỘNG] TÌM THẤY {len(files_to_process)} FILE CẦN XỬ LÝ!")
         
         for index, file_path in enumerate(files_to_process, 1):
             print(f"\n{'='*50}")
-            print(f"▶️ TIẾN TRÌNH TỔNG: Đang xử lý file {index}/{len(files_to_process)}")
-            print(f"▶️ TARGET: {os.path.basename(file_path)}")
+            print(f"TIẾN TRÌNH TỔNG: Đang xử lý file {index}/{len(files_to_process)}")
+            print(f"TARGET: {os.path.basename(file_path)}")
             print(f"{'='*50}")
             
             run_full_pipeline(file_path)

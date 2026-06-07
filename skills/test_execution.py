@@ -36,7 +36,7 @@ class TestExecutionAgent:
 
             if result.returncode == 0:
                 print("[SUCCESS] TUYET VOI! Bai test da PASS 100%!")
-                # Chỉ trả về kết quả, không gọi hàm self._save_log() nữa
+                # Chỉ trả về kết quả
                 return True, output
             else:
                 print("[FAILED] CANH BAO! Bai test co loi (FAIL)!")

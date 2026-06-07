@@ -3,7 +3,6 @@ from file_utils import read_js_file, save_test_file
 
 class AutoFixingAgent:
     def __init__(self):
-        # Đã loại bỏ genai.GenerativeModel và API Key
         pass
 
     def clean_code_output(self, raw_text):
@@ -31,7 +30,7 @@ class AutoFixingAgent:
         except Exception as e:
             return f"[ERROR] Khong the doc file log: {e}"
 
-        # --- TỰ ĐỘNG NHẬN DIỆN LỖI REQUIRE (Giữ nguyên logic tuyệt vời của cậu) ---
+        # --- TỰ ĐỘNG NHẬN DIỆN LỖI REQUIRE---
         extra_info = ""
         if "require is not defined" in error_log:
             extra_info = "\n[LUU Y QUAN TRONG TU HE THONG]: Loi 'require is not defined' do chay ESM. Hay dat tat ca lenh jest.mock() len tren cung file, TRUOC KHI import module can test.\n"
@@ -56,7 +55,7 @@ class AutoFixingAgent:
         if save_test_file(clean_code, test_code_path):
             print(f"[SUCCESS] Da luu ban va loi tai: {test_code_path}")
             
-            # Xóa file log cũ vì đã sửa xong (Giữ nguyên logic dọn dẹp của cậu)
+            # Xóa file log cũ vì đã sửa xong
             if os.path.exists(error_log_path):
                 os.remove(error_log_path)
                 print(f"[INFO] Da don dep file log cu: {error_log_path}")

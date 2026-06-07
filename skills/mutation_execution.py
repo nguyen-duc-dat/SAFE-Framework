@@ -14,7 +14,7 @@ class MutationExecutionAgent:
         print(f"[INFO] Bat dau kich hoat Stryker cho file: {rel_source_path}...")
         print(f"[INFO] Qua trinh nay co the mat 1-2 phut de Stryker tao va chay cac Mutant.")
         
-        # --- [SỬA ĐỔI MỚI] XÓA FILE BÁO CÁO CŨ ĐỂ TRÁNH ĐỌC NHẦM RÁC ---
+        # --- XÓA FILE BÁO CÁO CŨ ĐỂ TRÁNH ĐỌC NHẦM RÁC ---
         report_path = os.path.join(self.frontend_dir, "reports", "mutation", "mutation.json")
         if os.path.exists(report_path):
             try:
@@ -38,7 +38,7 @@ class MutationExecutionAgent:
                 errors='replace'
             )
 
-            # Lấy cả 2 luồng: Thông báo bình thường (stdout) và Lỗi chí mạng (stderr)
+            # Lấy cả 2 luồng: stdout và stderr
             stdout = result.stdout if result.stdout else ""
             stderr = result.stderr if result.stderr else ""
             
@@ -56,7 +56,6 @@ class MutationExecutionAgent:
             else:
                 print("\n[FAILED] Stryker chay loi, khong the tao file mutation.json!")
                 print("\n--- CHI TIET LOI ---")
-                # [SỬA Ở ĐÂY] Gộp cả stdout và stderr lại để không bỏ sót một chữ lỗi nào!
                 full_log = stdout + "\n--- LỖI (STDERR) ---\n" + stderr
                 error_log = full_log[-1500:] if len(full_log) > 1500 else full_log
                 print(error_log) 

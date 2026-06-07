@@ -9,7 +9,7 @@ class ContextAnalyzerAgent:
         """
         Tool dành cho AutoGen: Đọc và trả về nội dung file mã nguồn gốc từ dự án đích.
         """
-        print(f"🔍 [INFO] Đang đọc và phân tích mã nguồn từ: {source_code_path}...")
+        print(f"[INFO] Đang đọc và phân tích mã nguồn từ: {source_code_path}...")
         source_code = read_js_file(source_code_path)
         
         if not source_code:
